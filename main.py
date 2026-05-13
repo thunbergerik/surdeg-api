@@ -2,12 +2,11 @@ import base64
 import os
 import json
 import requests
-from fastapi import FastAPI, File, UploadFile
+import uuid  # <- Ny
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from dotenv import load_dotenv
-
-
 
 # Ladda miljövariabler
 load_dotenv()
@@ -128,3 +127,67 @@ async def get_history():
     else:
         # Om något strular, berätta vad
         return {"error": "Kunde inte hämta historiken", "details": db_response.text}
+    
+
+
+# --- Ny Endpoint för att logga ett komplett bak ---
+@app.post("/api/log_bake")
+async def log_bake(
+    # Filer
+    crumb_image: UploadFile = File(...),
+    crust_image: UploadFile = File(None), # Gör skorpan valfri
+    
+    # Recept och metadata som Formulärfält (Form)
+    flour_g: int = Form(...),
+    water_g: int = Form(...),
+    starter_g: int = Form(...),
+    salt_g: int = Form(...),
+    user_rating: int = Form(...),
+    notes: str = Form(""),
+    flour_details: str = Form("{}") # Vi skickar mjölsorterna som en JSON-sträng
+):
+    try:
+        # 1. Generera ett unikt ID för detta bak
+        bake_id = str(uuid.uuid4())
+        
+        # 2. Ladda upp bilder till Supabase Storage (om du har satt upp en bucket)
+        # Du behöver en funktion för detta, här är pseudokod:
+        # crumb_url = await upload_to_supabase_storage("surdeg-images", crumb_image)
+        # crust_url = None
+        # if crust_image:
+        #     crust_url = await upload_to_supabase_storage("surdeg-images", crust_image)
+        
+        # 3. Skicka inkråmsbilden till OpenAI för analys (Din befintliga funktion)
+        image_bytes = await crumb_image.read()
+        ai_result = await analyze_crumb_with_openai(image_bytes) # Din befintliga OpenAI-logik
+        
+        # 4. Spara huvuddatan i din 'bakes'-tabell i Supabase
+        bake_data = {
+            "id": bake_id,
+            "flour_g": flour_g,
+            "water_g": water_g,
+            "starter_g": starter_g,
+            "salt_g": salt_g,
+            "user_rating": user_rating,
+            "notes": notes,
+            "flour_details": json.loads(flour_details), # Konvertera strängen tillbaka till JSON
+            # "crust_image_url": crust_url
+        }
+        # Spara till supabase: supabase.table("bakes").insert(bake_data).execute()
+
+        # 5. Spara analysen i 'crumb_analyses' kopplat till bake_id
+        analysis_data = {
+            "bake_id": bake_id,
+            "ai_analysis": ai_result,
+            # "crumb_image_url": crumb_url
+        }
+        # Spara till supabase: supabase.table("crumb_analyses").insert(analysis_data).execute()
+
+        return {
+            "status": "success",
+            "bake_id": bake_id,
+            "ai_result": ai_result
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
