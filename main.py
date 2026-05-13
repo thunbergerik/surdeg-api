@@ -1,3 +1,7 @@
+@app.get("/")
+async def root():
+    return {"message": "Surdegs-API är live!"}
+
 import base64
 import os
 import json
