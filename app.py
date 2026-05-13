@@ -9,7 +9,7 @@ st.title("🍞 Surdegs-Analysator")
 st.markdown("Analysera ditt inkråm och följ din utveckling över tid.")
 
 # URL till din FastAPI-backend
-API_URL = "https://surdeg-api.onrender.com/"
+API_URL = "https://surdeg-api.onrender.com"
 
 # Skapa flikar för att dela upp verktyget
 tab1, tab2 = st.tabs(["Ny Analys", "Historik"])

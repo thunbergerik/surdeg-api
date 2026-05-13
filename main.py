@@ -1,7 +1,3 @@
-@app.get("/")
-async def root():
-    return {"message": "Surdegs-API är live!"}
-
 import base64
 import os
 import json
@@ -10,6 +6,8 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
 from dotenv import load_dotenv
+
+
 
 # Ladda miljövariabler
 load_dotenv()
@@ -30,6 +28,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+async def root():
+    return {"message": "Surdegs-API är live!"}
 
 SYSTEM_PROMPT = """
 Du är en analytisk master bagare specialiserad på surdeg och bakkemi. 
